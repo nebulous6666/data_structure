@@ -1,0 +1,1952 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>成绩统计系统 - 条形图与鸭子赛跑版</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            overflow:   hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 2.8em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        header p {
+            opacity: 0.9;
+            font-size: 1.2em;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .input-section {
+            margin-bottom: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, #fdfcfb 0%, #e2d1c3 100%);
+            border-radius: 15px;
+            border: 2px solid #e0e0e0;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #444;
+            font-size: 16px;
+        }
+        
+        input[type="number"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        input[type="number"]:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .score-inputs {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border: 2px dashed #c3cfe2;
+            border-radius: 12px;
+        }
+        
+        .score-input-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .score-input-group input {
+            margin-top: 5px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            font-size: 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            flex: 1;
+            min-width: 150px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .btn-reset {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 5px solid #f44336;
+        }
+        
+        .success-message {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 5px solid #4CAF50;
+        }
+        
+        /* === 条形统计图样式 - 简化版本 === */
+        .chart-section {
+            margin-top: 40px;
+            padding: 25px;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .chart-container {
+            width: 100%;
+            height: 400px;
+            position: relative;
+            margin-top: 20px;
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            height: 300px;
+            margin-top: 20px;
+            position: relative;
+        }
+        
+        .chart-bar-container {
+            flex: 1;
+            margin: 0 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+            justify-content: flex-end;
+        }
+        
+        .bar {
+            width: 80%;
+            background: linear-gradient(to top, #4ECDC4, #44A08D);
+            border-radius: 5px 5px 0 0;
+            transition: all 0.5s ease;
+            position: relative;
+            cursor: pointer;
+            min-height: 10px;
+        }
+        
+        .bar:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .bar-label {
+            margin-top: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #2c3e50;
+            text-align: center;
+        }
+        
+        .bar-value {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .bar:hover .bar-value {
+            opacity: 1;
+        }
+        
+        .chart-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .chart-subtitle {
+            text-align: center;
+            color: #546e7a;
+            margin-bottom: 20px;
+        }
+        
+        .chart-axes {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 300px;
+            pointer-events: none;
+        }
+        
+        .x-axis {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 2px;
+            background: #2c3e50;
+        }
+        
+        .y-axis {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #2c3e50;
+        }
+        
+        .y-labels {
+            position: absolute;
+            left: -40px;
+            top: 0;
+            bottom: 0;
+            width: 35px;
+        }
+        
+        .y-label {
+            position: absolute;
+            right: 5px;
+            font-size: 12px;
+            color: #666;
+            text-align: right;
+        }
+        
+        .chart-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-top: 25px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+        }
+        
+        /* === 鸭子赛跑样式 - 真正一行一个 === */
+        .duck-race-container {
+            margin-top: 40px;
+            padding: 25px;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        /* 单个跑道样式 - 每行一个跑道 */
+        .single-race-track {
+            position: relative;
+            width: 100%;
+            height: 200px; /* 每个跑道高度 */
+            margin: 15px 0;
+            background: linear-gradient(to bottom, #4a90e2, #7bb9ff);
+            border-radius: 10px;
+            border: 3px solid #2c3e50;
+            overflow: hidden;
+        }
+        
+        /* 跑道编号 */
+        .track-number {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 30px;
+            height: 30px;
+            background: #2c3e50;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            z-index: 2;
+        }
+        
+        /* 鸭子容器 - 每个跑道一个 */
+        .duck-container {
+            position: absolute;
+            bottom: 15px;
+            left: 50px; /* 从编号右边开始 */
+            transition: left 2s cubic-bezier(0.2, 0.8, 0.4, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 3;
+        }
+        
+        /* 鸭子样式 */
+        .duck {
+            width: 60px;
+            height: 50px;
+            background: #ff9800;
+            border-radius: 50% 50% 40% 40%;
+            position: relative;
+            transform: rotate(-10deg);
+            animation: float 2s ease-in-out infinite;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: rotate(-10deg) translateY(0); }
+            50% { transform: rotate(-10deg) translateY(-8px); }
+        }
+        
+        .duck::before {
+            content: '';
+            position: absolute;
+            top: -12px;
+            left: 38px;
+            width: 18px;
+            height: 14px;
+            background: inherit;
+            border-radius: 50%;
+        }
+        
+        .duck::after {
+            content: '🦆';
+            position: absolute;
+            top: -25px;
+            left: 40px;
+            font-size: 25px;
+            transform: rotate(15deg);
+        }
+        
+        .duck-body {
+            width: 60px;
+            height: 40px;
+            background: inherit;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 0;
+        }
+        
+        .duck-wing {
+            position: absolute;
+            width: 25px;
+            height: 18px;
+            background: #ff8a00;
+            border-radius: 50%;
+            bottom: 8px;
+            left: -4px;
+            animation: flap 0.5s ease-in-out infinite alternate;
+        }
+        
+        @keyframes flap {
+            0% { transform: scale(1) rotate(-5deg); }
+            100% { transform: scale(1.1) translateX(5px) rotate(5deg); }
+        }
+        
+        /* 分数信息 */
+        .duck-info {
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 8px 15px;
+            border-radius: 15px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+            text-align: center;
+            min-width: 100px;
+            z-index: 4;
+            border: 2px solid #4a90e2;
+        }
+        
+        .duck-score {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .duck-count {
+            font-size: 14px;
+            color: #666;
+            margin-top: 3px;
+        }
+        
+        /* 跑道上的标记线 */
+        .track-markings {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                repeating-linear-gradient(
+                    to right,
+                    transparent,
+                    transparent 49px,
+                    rgba(255, 255, 255, 0.2) 49px,
+                    rgba(255, 255, 255, 0.2) 50px
+                );
+        }
+        
+        /* 起点线 */
+        .start-line {
+            position: absolute;
+            left: 50px;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: #fff;
+            z-index: 1;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.3);
+        }
+        
+        .start-line::before {
+            content: '起点';
+            position: absolute;
+            left: -25px;
+            top: 50%;
+            transform: translateY(-50%) rotate(-90deg);
+            color: #2c3e50;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        /* 终点线 */
+        .finish-line {
+            position: absolute;
+            right: 100px;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+            background: repeating-linear-gradient(
+                to bottom,
+                #fff 0px,
+                #fff 15px,
+                #000 15px,
+                #000 30px
+            );
+            z-index: 1;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.3);
+        }
+        
+        .finish-line::after {
+            content: '🏁';
+            position: absolute;
+            right: -30px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 35px;
+        }
+        
+        /* 水波效果 */
+        .water-ripples {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 10px;
+            background: linear-gradient(to top, rgba(74, 144, 226, 0.6), transparent);
+        }
+        
+        .ripple {
+            position: absolute;
+            bottom: 0;
+            width: 20px;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            animation: ripple 1s linear infinite;
+        }
+        
+        @keyframes ripple {
+            0% { transform: scale(0.5); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+        
+        /* 不同颜色的鸭子 */
+        .duck-color-1 .duck { background: #FF6B6B; } /* 红色 */
+        .duck-color-2 .duck { background: #4ECDC4; } /* 青色 */
+        .duck-color-3 .duck { background: #FFD166; } /* 黄色 */
+        .duck-color-4 .duck { background: #06D6A0; } /* 绿色 */
+        .duck-color-5 .duck { background: #118AB2; } /* 蓝色 */
+        .duck-color-6 .duck { background: #EF476F; } /* 粉色 */
+        .duck-color-7 .duck { background: #073B4C; } /* 深蓝 */
+        .duck-color-8 .duck { background: #7209B7; } /* 紫色 */
+        
+        /* 进度指示器 */
+        .progress-indicator {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 10px;
+            font-size: 12px;
+            z-index: 2;
+        }
+        
+        /* 赛跑控制区 */
+        .race-controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+        
+        /* 统计信息 */
+        .race-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 12px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #667eea;
+            margin: 5px 0;
+        }
+        
+        .stat-label {
+            font-size: 13px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* 结果展示区域 */
+        .result-section {
+            margin-top: 40px;
+            padding-top: 25px;
+            border-top: 3px solid #e0e0e0;
+        }
+        
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .text-results {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 15px;
+        }
+        
+        /* 冠军特效 */
+        .winner-glow {
+            animation: winnerGlow 1s ease-in-out infinite alternate;
+            box-shadow: 0 0 15px gold;
+        }
+        
+        @keyframes winnerGlow {
+            from { box-shadow: 0 0 10px gold; }
+            to { box-shadow: 0 0 20px gold; }
+        }
+        
+        /* 庆祝特效 */
+        .celebration {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 30px;
+            animation: bounce 0.5s ease-in-out infinite alternate;
+        }
+        
+        @keyframes bounce {
+            from { transform: translateX(-50%) translateY(0); }
+            to { transform: translateX(-50%) translateY(-10px); }
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 1200px) {
+            .container {
+                max-width: 95%;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            header {
+                padding: 20px;
+            }
+            
+            header h1 {
+                font-size: 2em;
+            }
+            
+            .score-inputs {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .chart-container {
+                height: 350px;
+                padding: 15px;
+            }
+            
+            .bar-chart {
+                height: 250px;
+            }
+            
+            .single-race-track {
+                height: 80px;
+                margin: 10px 0;
+            }
+            
+            .duck {
+                width: 50px;
+                height: 45px;
+            }
+            
+            .duck::after {
+                font-size: 20px;
+                top: -20px;
+                left: 35px;
+            }
+            
+            .duck-info {
+                top: -50px;
+                padding: 6px 12px;
+                min-width: 80px;
+            }
+            
+            .duck-score {
+                font-size: 18px;
+            }
+            
+            .finish-line {
+                right: 80px;
+            }
+            
+            .finish-line::after {
+                font-size: 30px;
+                right: -25px;
+            }
+            
+            .race-stats, .chart-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .score-inputs {
+                grid-template-columns: 1fr;
+            }
+            
+            body {
+                padding: 10px;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+            
+            .race-controls {
+                flex-direction: column;
+            }
+            
+            .race-controls .btn {
+                width: 100%;
+            }
+            
+            .single-race-track {
+                height: 70px;
+            }
+            
+            .track-number {
+                width: 25px;
+                height: 25px;
+                font-size: 12px;
+            }
+            
+            .duck-container {
+                left: 40px;
+            }
+            
+            .start-line {
+                left: 40px;
+            }
+            
+            .chart-container {
+                height: 300px;
+                padding: 10px;
+            }
+            
+            .bar-chart {
+                height: 200px;
+            }
+            
+            .bar-label {
+                font-size: 12px;
+            }
+        }
+        
+        /* 结果项样式 */
+        .text-result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            transition: transform 0.3s;
+        }
+        
+        .text-result-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.12);
+        }
+        
+        /* 可视化切换标签 */
+        .visualization-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .tab-button {
+            padding: 12px 25px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            font-weight: bold;
+            color: #666;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s;
+        }
+        
+        .tab-button:hover {
+            color: #667eea;
+        }
+        
+        .tab-button.active {
+            color: #667eea;
+        }
+        
+        .tab-button.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 3px 3px 0 0;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 成绩统计系统 - 条形图与鸭子赛跑版 🦆</h1>
+            <p>专业条形统计图 + 趣味鸭子赛跑，双重数据可视化体验！</p>
+        </header>
+        
+        <div class="content">
+            <!-- 输入区域 -->
+            <div class="input-section">
+                <div class="input-group">
+                    <label for="studentCount">👨‍🎓 请输入学生人数：</label>
+                    <input type="number" id="studentCount" min="1" max="100" placeholder="例如：10" value="8">
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn" onclick="createScoreInputs()">生成成绩输入框</button>
+                    <button class="btn btn-secondary" onclick="calculateStatistics()">开始统计分析</button>
+                    <button class="btn btn-reset" onclick="resetAll()">重置所有数据</button>
+                </div>
+                
+                <div id="scoreInputsContainer"></div>
+            </div>
+            
+            <!-- 加载状态 -->
+            <div id="loadingState" class="loading" style="display: none;">
+                <div class="loading-spinner"></div>
+                <p>正在使用 WebAssembly 高速处理数据...</p>
+            </div>
+            
+            <!-- 错误信息区域 -->
+            <div id="errorContainer"></div>
+            
+            <!-- 结果展示区域 -->
+            <div class="result-section">
+                <div class="result-header">
+                    <h2>📊 统计分析结果</h2>
+                    <div id="resultCount"></div>
+                </div>
+                
+                <!-- 文本结果 -->
+                <div id="textResults" class="text-results">
+                    <!-- 文本结果会动态插入到这里 -->
+                </div>
+                
+                <!-- 可视化切换标签 -->
+                <div class="visualization-tabs">
+                    <button class="tab-button active" onclick="switchTab('barChart')">📊 条形统计图</button>
+                    <button class="tab-button" onclick="switchTab('duckRace')">🦆 鸭子赛跑</button>
+                </div>
+                
+                <!-- 条形统计图区域 -->
+                <div id="barChartTab" class="tab-content active">
+                    <div class="chart-section">
+                        <h3 class="chart-title">📊 成绩分布条形统计图</h3>
+                        <p class="chart-subtitle">
+                            专业的数据可视化图表，清晰展示每个分数出现的频率
+                        </p>
+                        
+                        <!-- 图表容器 -->
+                        <div class="chart-container">
+                            <div class="bar-chart" id="barChart">
+                                <!-- 条形图会动态添加到这里 -->
+                            </div>
+                            <div class="chart-axes">
+                                <div class="y-axis"></div>
+                                <div class="y-labels" id="yLabels"></div>
+                                <div class="x-axis"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- 统计信息 -->
+                        <div class="chart-stats">
+                            <div class="stat-item">
+                                <div class="stat-value" id="chartTotalScores">0</div>
+                                <div class="stat-label">总成绩数</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="chartUniqueScores">0</div>
+                                <div class="stat-label">不同分数</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="chartHighestCount">0</div>
+                                <div class="stat-label">最高频次</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="chartMostFrequent">--</div>
+                                <div class="stat-label">最常见分数</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 控制按钮 -->
+                        <div class="race-controls">
+                            <button class="btn" onclick="animateChart()" id="chartButton">🎬 播放动画</button>
+                            <button class="btn btn-secondary" onclick="resetChart()">🔄 重置图表</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 鸭子赛跑区域 -->
+                <div id="duckRaceTab" class="tab-content">
+                    <div id="duckRaceContainer" class="duck-race-container">
+                        <h3 style="text-align: center; margin-bottom: 20px; color: #2c3e50;">🏁 鸭子成绩赛跑 🦆</h3>
+                        <p style="text-align: center; color: #546e7a; margin-bottom: 20px;">
+                            一行一个跑道，每只鸭子都有自己的专属跑道！<br>
+                            成绩出现次数越多，鸭子跑得越快！
+                        </p>
+                        
+                        <!-- 跑道容器 -->
+                        <div id="raceTracks">
+                            <!-- 跑道会动态添加到这里 -->
+                        </div>
+                        
+                        <!-- 统计信息 -->
+                        <div class="race-stats">
+                            <div class="stat-item">
+                                <div class="stat-value" id="totalDucks">0</div>
+                                <div class="stat-label">参赛鸭子</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="winningScore">--</div>
+                                <div class="stat-label">领先分数</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="maxCount">0</div>
+                                <div class="stat-label">最高次数</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 控制按钮 -->
+                        <div class="race-controls">
+                            <button class="btn" onclick="startRace()" id="raceButton">🎬 开始比赛</button>
+                            <button class="btn btn-secondary" onclick="resetRace()">🔄 重置比赛</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 操作说明 -->
+            <div class="instructions">
+                <h3>💡 使用说明</h3>
+                <ol>
+                    <li>输入学生人数，点击"生成成绩输入框"</li>
+                    <li>在生成的输入框中输入每位学生的成绩（0-100分）</li>
+                    <li>负值成绩将被视为无效（自动跳过）</li>
+                    <li>点击"开始统计分析"进行数据统计</li>
+                    <li>切换标签查看不同的可视化效果：条形图（专业统计）或鸭子赛跑（趣味展示）</li>
+                    <li>点击"播放动画"或"开始比赛"观看动态效果</li>
+                </ol>
+                <p>
+                    💡 提示：本系统使用 WebAssembly 技术，C++ 代码在浏览器中直接运行，性能卓越！
+                    条形统计图提供专业的数据可视化，鸭子赛跑让学习变得更加有趣！
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 加载 WebAssembly 模块 -->
+    <script src="score_module.js"></script>
+    
+    <script>
+        // 全局变量
+        let scoreModule = null;
+        let scores = [];
+        let isRacing = false;
+        let isChartAnimating = false;
+        let currentResultArray = [];
+        let duckContainers = [];
+        
+        // 初始化 WebAssembly 模块
+        async function initializeModule() {
+            try {
+                console.log("正在初始化 WebAssembly 模块...");
+                
+                // 等待模块加载完成
+                scoreModule = await createScoreModule();
+                
+                if (!scoreModule) {
+                    throw new Error("模块加载失败");
+                }
+                
+                console.log("WebAssembly 模块初始化成功");
+                showMessage("✅ 系统准备就绪，可以开始使用！", "success");
+                
+            } catch (error) {
+                console.error("初始化失败:", error);
+                showError(`系统初始化失败: ${error.message}<br>请刷新页面重试或检查控制台错误。`);
+            }
+        }
+        
+        // 创建成绩输入框
+        function createScoreInputs() {
+            const countInput = document.getElementById('studentCount');
+            const count = parseInt(countInput.value);
+            
+            if (!count || count < 1 || count > 100) {
+                showError("请输入 1-100 之间的有效数字！");
+                return;
+            }
+            
+            const container = document.getElementById('scoreInputsContainer');
+            let html = '<h3 style="margin-bottom: 15px;">📝 请输入学生成绩：</h3>';
+            html += '<div class="score-inputs">';
+            
+            // 生成一些随机成绩作为示例
+            for (let i = 0; i < count; i++) {
+                // 生成60-100之间的随机分数作为示例
+                const exampleScore = Math.floor(Math.random() * 41) + 60;
+                html += `
+                    <div class="score-input-group">
+                        <label>学生 ${i + 1}：</label>
+                        <input type="number" 
+                               class="score-input" 
+                               data-index="${i}" 
+                               placeholder="0-100"
+                               min="-1" 
+                               max="100"
+                               value="${exampleScore}"
+                               oninput="updateScore(${i})">
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            container.innerHTML = html;
+            
+            // 初始化成绩数组
+            scores = new Array(count).fill(0);
+            
+            // 用示例成绩填充数组
+            for (let i = 0; i < count; i++) {
+                const input = document.querySelector(`.score-input[data-index="${i}"]`);
+                scores[i] = parseInt(input.value) || 0;
+            }
+            
+            // 清除之前的结果
+            clearResults();
+            
+            showMessage(`已创建 ${count} 个成绩输入框，已填充示例数据`, "success");
+        }
+        
+        // 更新成绩数组
+        function updateScore(index) {
+            const input = document.querySelector(`.score-input[data-index="${index}"]`);
+            const value = parseInt(input.value);
+            scores[index] = isNaN(value) ? 0 : value;
+        }
+        
+        // 计算统计分析
+        async function calculateStatistics() {
+            // 检查模块是否已初始化
+            if (!scoreModule) {
+                await initializeModule();
+            }
+            
+            // 再次检查
+            if (!scoreModule) {
+                showError("系统未初始化，请刷新页面重试");
+                return;
+            }
+            
+            // 检查是否有输入数据
+            if (scores.length === 0) {
+                showError("请先输入学生人数并生成输入框！");
+                return;
+            }
+            
+            // 显示加载状态
+            showLoading(true);
+            clearResults();
+            
+            try {
+                // 创建成绩向量
+                const scoresVector = new scoreModule.VectorInt();
+                
+                // 添加所有成绩到向量
+                scores.forEach(score => {
+                    scoresVector.push_back(score);
+                });
+                
+                // 调用 C++ 函数处理数据
+                const result = scoreModule.processScores(scoresVector);
+                const invalidCount = scoreModule.countInvalidScores(scoresVector);
+                
+                // 将结果转换为 JavaScript 数组
+                currentResultArray = [];
+                for (let i = 0; i < result.size(); i++) {
+                    const item = result.get(i);
+                    // 尝试不同的访问方式
+                    let score, count;
+                    
+                    // 方式1：直接访问属性
+                    if (item.score !== undefined && item.count !== undefined) {
+                        score = item.score;
+                        count = item.count;
+                    }
+                    // 方式2：使用 get 方法
+                    else if (item.get) {
+                        try {
+                            score = item.get(0);
+                            count = item.get(1);
+                        } catch (e) {
+                            // 如果 get 方法失败，尝试其他方式
+                            score = item.first;
+                            count = item.second;
+                        }
+                    }
+                    // 方式3：访问 first 和 second
+                    else {
+                        score = item.first;
+                        count = item.second;
+                    }
+                    
+                    if (score !== undefined && count !== undefined) {
+                        currentResultArray.push({ score, count });
+                    }
+                }
+                
+                // 按分数排序（从低到高）
+                currentResultArray.sort((a, b) => a.score - b.score);
+                
+                // 显示文本结果
+                displayTextResults(currentResultArray, invalidCount);
+                
+                // 创建条形统计图
+                createBarChart(currentResultArray);
+                
+                // 创建鸭子赛跑
+                createDuckRace(currentResultArray);
+                
+                // 清理内存
+                scoresVector.delete();
+                result.delete();
+                
+                // 显示成功消息
+                showMessage("✅ 成绩分析完成！可以查看条形图和鸭子赛跑！", "success");
+                
+            } catch (error) {
+                console.error("计算失败:", error);
+                showError(`数据处理失败: ${error.message}`);
+            } finally {
+                // 隐藏加载状态
+                showLoading(false);
+            }
+        }
+        
+        // 显示文本结果
+        function displayTextResults(resultArray, invalidCount) {
+            const textResults = document.getElementById('textResults');
+            const resultCount = document.getElementById('resultCount');
+            
+            if (resultArray.length === 0) {
+                textResults.innerHTML = '<div class="error-message">没有有效的成绩数据！</div>';
+                resultCount.innerHTML = '';
+                return;
+            }
+            
+            // 更新结果数量
+            resultCount.innerHTML = `<span style="color: #667eea; font-weight: bold; font-size: 1.2em;">共 ${resultArray.length} 个不同分数</span>`;
+            
+            // 文本结果展示
+            let html = '<h3 style="margin-bottom: 15px; color: #37474f;">📋 成绩统计详情：</h3>';
+            
+            // 找出最大次数用于计算百分比
+            let maxCount = 0;
+            for (const item of resultArray) {
+                if (item.count > maxCount) maxCount = item.count;
+            }
+            
+            // 显示每个分数的统计
+            for (const item of resultArray) {
+                const score = item.score;
+                const count = item.count;
+                
+                // 计算进度条长度
+                const percentage = maxCount > 0 ? Math.round((count / maxCount) * 100) : 0;
+                const barLength = 200; // 基础长度
+                const actualLength = (percentage / 100) * barLength;
+                
+                // 生成进度条
+                const progressBar = `<div style="width: ${barLength}px; height: 20px; background: #e0e0e0; border-radius: 10px; overflow: hidden;">
+                    <div style="width: ${actualLength}px; height: 100%; background: linear-gradient(90deg, #4ECDC4, #44A08D); border-radius: 10px;"></div>
+                </div>`;
+                
+                html += `
+                    <div class="text-result-item">
+                        <div>
+                            <div style="font-size: 20px; font-weight: bold; color: #2c3e50;">${score} 分</div>
+                            <div style="font-size: 14px; color: #666;">出现次数: ${count}</div>
+                        </div>
+                        <div>
+                            <div style="text-align: right; margin-bottom: 5px;">${percentage}%</div>
+                            ${progressBar}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // 显示无效成绩信息
+            if (invalidCount > 0) {
+                html += `
+                    <div class="error-message" style="margin-top: 20px;">
+                        <strong>⚠️ 注意：</strong>发现了 ${invalidCount} 个无效成绩（小于0的成绩已被自动跳过）
+                    </div>
+                `;
+            }
+            
+            textResults.innerHTML = html;
+        }
+        
+        // 创建条形统计图 - 简化版本
+        function createBarChart(resultArray) {
+            const barChart = document.getElementById('barChart');
+            const yLabels = document.getElementById('yLabels');
+            
+            // 清空之前的图表
+            barChart.innerHTML = '';
+            yLabels.innerHTML = '';
+            
+            if (resultArray.length === 0) {
+                barChart.innerHTML = '<div style="text-align: center; padding: 50px; color: #666; font-size: 18px;">没有数据可以绘制图表 📊</div>';
+                return;
+            }
+            
+            // 找到最大值用于Y轴刻度
+            let maxCount = 0;
+            let totalScores = 0;
+            let mostFrequentScore = resultArray[0]?.score;
+            let mostFrequentCount = 0;
+            
+            resultArray.forEach(item => {
+                totalScores += item.count;
+                if (item.count > maxCount) {
+                    maxCount = item.count;
+                }
+                if (item.count > mostFrequentCount) {
+                    mostFrequentCount = item.count;
+                    mostFrequentScore = item.score;
+                }
+            });
+            
+            // 更新统计信息
+            document.getElementById('chartTotalScores').textContent = totalScores;
+            document.getElementById('chartUniqueScores').textContent = resultArray.length;
+            document.getElementById('chartHighestCount').textContent = maxCount;
+            document.getElementById('chartMostFrequent').textContent = mostFrequentScore || '--';
+            
+            // 创建Y轴刻度标签
+            const maxYValue = Math.ceil(maxCount / 5) * 5; // 向上取整到最近的5的倍数
+            const yStep = Math.max(1, Math.ceil(maxYValue / 5)); // 确保至少有1个步长
+            
+            for (let i = 0; i <= 5; i++) {
+                const value = i * yStep;
+                if (value <= maxYValue) {
+                    const position = (100 - (value / maxYValue) * 100) + '%';
+                    
+                    const yLabel = document.createElement('div');
+                    yLabel.className = 'y-label';
+                    yLabel.textContent = value;
+                    yLabel.style.top = position;
+                    yLabels.appendChild(yLabel);
+                }
+            }
+            
+            // 创建条形
+            resultArray.forEach((item, index) => {
+                const barContainer = document.createElement('div');
+                barContainer.className = 'chart-bar-container';
+                
+                // 计算条形高度 (相对于最大值的百分比)
+                const heightPercentage = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
+                
+                // 创建条形
+                const bar = document.createElement('div');
+                bar.className = 'bar';
+                bar.style.height = '0px'; // 初始高度为0，用于动画
+                bar.dataset.height = heightPercentage;
+                bar.dataset.count = item.count;
+                
+                // 添加悬停显示次数的标签
+                const barValue = document.createElement('div');
+                barValue.className = 'bar-value';
+                barValue.textContent = `${item.count}次`;
+                bar.appendChild(barValue);
+                
+                // 添加条形标签
+                const barLabel = document.createElement('div');
+                barLabel.className = 'bar-label';
+                barLabel.textContent = `${item.score}分`;
+                
+                barContainer.appendChild(bar);
+                barContainer.appendChild(barLabel);
+                barChart.appendChild(barContainer);
+            });
+            
+            // 启用图表动画按钮
+            const chartButton = document.getElementById('chartButton');
+            chartButton.disabled = false;
+            chartButton.innerHTML = '🎬 播放动画';
+            isChartAnimating = false;
+            
+            // 自动播放动画
+            setTimeout(() => {
+                animateChart();
+            }, 500);
+        }
+        
+        // 播放图表动画
+        function animateChart() {
+            if (isChartAnimating) return;
+            
+            const chartButton = document.getElementById('chartButton');
+            const bars = document.querySelectorAll('.bar');
+            const barChart = document.getElementById('barChart');
+            
+            // 设置动画状态
+            isChartAnimating = true;
+            chartButton.disabled = true;
+            chartButton.innerHTML = '📊 动画中...';
+            
+            // 获取条形图容器高度
+            const chartHeight = barChart.clientHeight;
+            
+            // 重置所有条形高度为0
+            bars.forEach(bar => {
+                bar.style.height = '0px';
+                bar.style.transition = 'none';
+            });
+            
+            // 强制重绘
+            void barChart.offsetWidth;
+            
+            // 依次为每个条形设置动画
+            bars.forEach((bar, index) => {
+                setTimeout(() => {
+                    const heightPercentage = parseFloat(bar.dataset.height);
+                    const actualHeight = (heightPercentage / 100) * chartHeight * 0.9; // 90%的可用高度
+                    
+                    bar.style.transition = `height 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)`;
+                    bar.style.height = `${actualHeight}px`;
+                    
+                    // 添加颜色变化效果
+                    const hue = (index * 30) % 360;
+                    bar.style.background = `linear-gradient(to top, hsl(${hue}, 70%, 60%), hsl(${hue}, 80%, 50%))`;
+                    
+                }, index * 100); // 每个条形延迟100ms
+            });
+            
+            // 动画结束后重置按钮状态
+            setTimeout(() => {
+                chartButton.disabled = false;
+                chartButton.innerHTML = '🔄 重新播放';
+                isChartAnimating = false;
+            }, bars.length * 100 + 1500);
+        }
+        
+        // 重置图表
+        function resetChart() {
+            if (isChartAnimating) return;
+            
+            const bars = document.querySelectorAll('.bar');
+            
+            bars.forEach(bar => {
+                bar.style.transition = 'height 0.5s ease-in-out';
+                bar.style.height = '0px';
+            });
+            
+            // 重置按钮
+            const chartButton = document.getElementById('chartButton');
+            chartButton.disabled = false;
+            chartButton.innerHTML = '🎬 播放动画';
+        }
+        
+        // 切换标签页
+        function switchTab(tabName) {
+            // 隐藏所有标签内容
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 移除所有标签按钮的活动状态
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            // 显示选中的标签内容
+            document.getElementById(`${tabName}Tab`).classList.add('active');
+            
+            // 设置选中的标签按钮为活动状态
+            document.querySelector(`.tab-button[onclick="switchTab('${tabName}')"]`).classList.add('active');
+            
+            // 如果切换到鸭子赛跑标签，确保赛跑区域是显示的
+            if (tabName === 'duckRace') {
+                document.getElementById('duckRaceContainer').style.display = 'block';
+            }
+        }
+        
+        // 创建鸭子赛跑 - 一行一个跑道
+        function createDuckRace(resultArray) {
+            const duckRaceContainer = document.getElementById('duckRaceContainer');
+            const raceTracks = document.getElementById('raceTracks');
+            
+            // 显示赛跑区域
+            duckRaceContainer.style.display = 'block';
+            
+            // 清空之前的跑道
+            raceTracks.innerHTML = '';
+            duckContainers = [];
+            
+            if (resultArray.length === 0) {
+                raceTracks.innerHTML = '<div style="text-align: center; padding: 50px; color: #666; font-size: 18px;">没有数据可以赛跑 🦆</div>';
+                return;
+            }
+            
+            // 找到最大次数
+            let maxCount = 0;
+            resultArray.forEach(item => {
+                if (item.count > maxCount) maxCount = item.count;
+            });
+            
+            // 更新统计信息
+            document.getElementById('totalDucks').textContent = resultArray.length;
+            document.getElementById('maxCount').textContent = maxCount;
+            
+            // 按次数排序找到领先分数
+            const sortedByCount = [...resultArray].sort((a, b) => b.count - a.count);
+            document.getElementById('winningScore').textContent = sortedByCount[0]?.score || '--';
+            
+            // 创建跑道 - 一行一个
+            resultArray.forEach((item, index) => {
+                // 创建单个跑道
+                const trackDiv = document.createElement('div');
+                trackDiv.className = 'single-race-track';
+                trackDiv.id = `track-${index}`;
+                
+                // 跑道编号
+                const trackNumber = document.createElement('div');
+                trackNumber.className = 'track-number';
+                trackNumber.textContent = index + 1;
+                trackDiv.appendChild(trackNumber);
+                
+                // 跑道标记线
+                const markings = document.createElement('div');
+                markings.className = 'track-markings';
+                trackDiv.appendChild(markings);
+                
+                // 起点线
+                const startLine = document.createElement('div');
+                startLine.className = 'start-line';
+                trackDiv.appendChild(startLine);
+                
+                // 终点线
+                const finishLine = document.createElement('div');
+                finishLine.className = 'finish-line';
+                trackDiv.appendChild(finishLine);
+                
+                // 水波效果
+                const waterRipples = document.createElement('div');
+                waterRipples.className = 'water-ripples';
+                trackDiv.appendChild(waterRipples);
+                
+                // 创建鸭子容器
+                const duckContainer = document.createElement('div');
+                duckContainer.className = `duck-container duck-color-${(index % 8) + 1}`;
+                duckContainer.id = `duck-${index}`;
+                
+                // 计算进度（根据次数占最大次数的比例）
+                const progress = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
+                duckContainer.dataset.progress = progress;
+                duckContainer.dataset.score = item.score;
+                duckContainer.dataset.count = item.count;
+                duckContainer.dataset.index = index;
+                
+                // 计算跑道可用宽度
+                const trackWidth = 800; // 估计的跑道宽度
+                const finalPosition = 50 + (progress / 100) * (trackWidth - 150);
+                const startPosition = 50;
+                
+                // 设置初始位置
+                duckContainer.style.left = `${startPosition}px`;
+                duckContainer.dataset.startPosition = startPosition;
+                duckContainer.dataset.finalPosition = finalPosition;
+                
+                // 添加进度指示器
+                const progressIndicator = document.createElement('div');
+                progressIndicator.className = 'progress-indicator';
+                progressIndicator.textContent = `${Math.round(progress)}%`;
+                progressIndicator.id = `progress-${index}`;
+                trackDiv.appendChild(progressIndicator);
+                
+                // 创建鸭子
+                duckContainer.innerHTML = `
+                    <div class="duck-info">
+                        <div class="duck-score">${item.score}分</div>
+                        <div class="duck-count">${item.count}次</div>
+                    </div>
+                    <div class="duck">
+                        <div class="duck-body"></div>
+                        <div class="duck-wing"></div>
+                    </div>
+                `;
+                
+                trackDiv.appendChild(duckContainer);
+                raceTracks.appendChild(trackDiv);
+                
+                // 保存鸭子容器引用
+                duckContainers.push({
+                    element: duckContainer,
+                    track: trackDiv,
+                    progress: progress,
+                    score: item.score,
+                    count: item.count,
+                    index: index
+                });
+                
+                // 添加水波纹效果
+                createWaterRipples(waterRipples);
+            });
+            
+            // 启用比赛按钮
+            const raceButton = document.getElementById('raceButton');
+            raceButton.disabled = false;
+            raceButton.innerHTML = '🎬 开始比赛';
+            isRacing = false;
+        }
+        
+        // 创建水波纹效果
+        function createWaterRipples(container) {
+            for (let i = 0; i < 3; i++) {
+                const ripple = document.createElement('div');
+                ripple.className = 'ripple';
+                ripple.style.left = `${20 + i * 15}%`;
+                ripple.style.animationDelay = `${i * 0.3}s`;
+                container.appendChild(ripple);
+            }
+        }
+        
+        // 开始赛跑
+        function startRace() {
+            if (isRacing || duckContainers.length === 0) return;
+            
+            const raceButton = document.getElementById('raceButton');
+            
+            // 设置比赛状态
+            isRacing = true;
+            raceButton.disabled = true;
+            raceButton.innerHTML = '🏃‍♂️ 比赛中...';
+            
+            // 重置所有鸭子的位置到起点
+            duckContainers.forEach(duck => {
+                const duckElement = duck.element;
+                duckElement.style.transition = 'none';
+                duckElement.style.left = duckElement.dataset.startPosition + 'px';
+                duckElement.classList.remove('winner-glow');
+                
+                // 移除之前的庆祝效果
+                const existingCelebration = duckElement.querySelector('.celebration');
+                if (existingCelebration) {
+                    existingCelebration.remove();
+                }
+            });
+            
+            // 强制重绘
+            void document.getElementById('raceTracks').offsetWidth;
+            
+            // 找到最高分
+            let maxCount = 0;
+            let winnerScores = [];
+            
+            duckContainers.forEach(duck => {
+                if (duck.count > maxCount) {
+                    maxCount = duck.count;
+                    winnerScores = [duck.score];
+                } else if (duck.count === maxCount) {
+                    winnerScores.push(duck.score);
+                }
+            });
+            
+            // 更新领先分数
+            document.getElementById('winningScore').textContent = winnerScores.length > 1 ? 
+                winnerScores.join(',') : (winnerScores[0] || '--');
+            
+            // 每只鸭子依次出发
+            duckContainers.forEach((duck, index) => {
+                const duckElement = duck.element;
+                const finalPosition = duckElement.dataset.finalPosition;
+                const progress = duck.progress;
+                
+                // 设置延迟，让鸭子依次出发
+                setTimeout(() => {
+                    duckElement.style.transition = `left ${1.5 + (progress / 50)}s cubic-bezier(0.2, 0.8, 0.4, 1.2)`;
+                    duckElement.style.left = `${finalPosition}px`;
+                    
+                    // 更新进度指示器
+                    const progressElement = document.getElementById(`progress-${index}`);
+                    if (progressElement) {
+                        progressElement.textContent = `${Math.round(progress)}%`;
+                    }
+                    
+                }, index * 200); // 每只鸭子延迟200ms出发
+            });
+            
+            // 播放音效
+            playRaceSound();
+            
+            // 比赛结束后处理
+            const totalDelay = duckContainers.length * 200 + 2500;
+            setTimeout(() => {
+                raceButton.disabled = false;
+                raceButton.innerHTML = '🔄 重新比赛';
+                isRacing = false;
+                
+                // 高亮冠军
+                highlightWinner();
+            }, totalDelay);
+        }
+        
+        // 高亮显示冠军
+        function highlightWinner() {
+            if (duckContainers.length === 0) return;
+            
+            // 找到进度最高的鸭子（可能有多个）
+            let maxProgress = 0;
+            let winners = [];
+            
+            duckContainers.forEach(duck => {
+                if (duck.progress > maxProgress) {
+                    maxProgress = duck.progress;
+                    winners = [duck];
+                } else if (duck.progress === maxProgress) {
+                    winners.push(duck);
+                }
+            });
+            
+            // 高亮所有冠军
+            winners.forEach(winner => {
+                const duckElement = winner.element;
+                duckElement.classList.add('winner-glow');
+                
+                // 添加庆祝效果
+                const celebration = document.createElement('div');
+                celebration.className = 'celebration';
+                celebration.innerHTML = '🏆';
+                duckElement.appendChild(celebration);
+            });
+            
+            // 显示祝贺消息
+            if (winners.length > 0) {
+                const firstWinner = winners[0];
+                if (winners.length === 1) {
+                    showMessage(`🏆 冠军诞生！${firstWinner.score}分以${firstWinner.count}次领先！`, "success");
+                } else {
+                    showMessage(`🏆🏆 多人并列冠军！成绩出现次数相同！`, "success");
+                }
+            }
+        }
+        
+        // 重置比赛
+        function resetRace() {
+            if (isRacing) return;
+            
+            duckContainers.forEach(duck => {
+                const duckElement = duck.element;
+                duckElement.style.transition = 'left 0.5s ease-in-out';
+                duckElement.style.left = duckElement.dataset.startPosition + 'px';
+                duckElement.classList.remove('winner-glow');
+                
+                // 移除庆祝效果
+                const celebration = duckElement.querySelector('.celebration');
+                if (celebration) {
+                    celebration.remove();
+                }
+                
+                // 重置进度指示器
+                const progressElement = document.getElementById(`progress-${duck.index}`);
+                if (progressElement) {
+                    progressElement.textContent = `${Math.round(duck.progress)}%`;
+                }
+            });
+            
+            // 重置按钮
+            const raceButton = document.getElementById('raceButton');
+            raceButton.disabled = false;
+            raceButton.innerHTML = '🎬 开始比赛';
+            
+            // 重置领先分数
+            document.getElementById('winningScore').textContent = '--';
+        }
+        
+        // 播放赛跑音效
+        function playRaceSound() {
+            try {
+                // 创建简单的音效
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // 起跑音效
+                const startOscillator = audioContext.createOscillator();
+                const startGain = audioContext.createGain();
+                startOscillator.connect(startGain);
+                startGain.connect(audioContext.destination);
+                
+                startOscillator.frequency.value = 800;
+                startOscillator.type = 'sine';
+                startGain.gain.setValueAtTime(0.3, audioContext.currentTime);
+                startGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                
+                startOscillator.start();
+                startOscillator.stop(audioContext.currentTime + 0.5);
+                
+            } catch (e) {
+                console.log("音效播放失败:", e);
+            }
+        }
+        
+        // 重置所有数据
+        function resetAll() {
+            // 重置成绩数组
+            scores = [];
+            
+            // 清空输入框
+            document.getElementById('scoreInputsContainer').innerHTML = '';
+            document.getElementById('studentCount').value = '8';
+            
+            // 清空结果
+            clearResults();
+            
+            // 隐藏赛跑区域
+            document.getElementById('duckRaceContainer').style.display = 'none';
+            
+            // 重置图表
+            resetChart();
+            
+            // 重置比赛状态
+            isRacing = false;
+            isChartAnimating = false;
+            
+            // 清空错误和消息
+            document.getElementById('errorContainer').innerHTML = '';
+            
+            // 切换到条形图标签
+            switchTab('barChart');
+            
+            // 重新生成输入框
+            createScoreInputs();
+            
+            showMessage("✅ 已重置所有数据，可以重新开始输入", "success");
+        }
+        
+        // 清空结果
+        function clearResults() {
+            document.getElementById('textResults').innerHTML = '';
+            document.getElementById('errorContainer').innerHTML = '';
+            document.getElementById('resultCount').innerHTML = '';
+            
+            // 清空图表
+            document.getElementById('barChart').innerHTML = '';
+            document.getElementById('yLabels').innerHTML = '';
+            
+            // 重置统计信息
+            document.getElementById('chartTotalScores').textContent = '0';
+            document.getElementById('chartUniqueScores').textContent = '0';
+            document.getElementById('chartHighestCount').textContent = '0';
+            document.getElementById('chartMostFrequent').textContent = '--';
+        }
+        
+        // 显示加载状态
+        function showLoading(show) {
+            const loadingElement = document.getElementById('loadingState');
+            loadingElement.style.display = show ? 'block' : 'none';
+        }
+        
+        // 显示错误信息
+        function showError(message) {
+            const errorContainer = document.getElementById('errorContainer');
+            errorContainer.innerHTML = `<div class="error-message">${message}</div>`;
+        }
+        
+        // 显示成功消息
+        function showMessage(message, type = 'success') {
+            const errorContainer = document.getElementById('errorContainer');
+            const className = type === 'success' ? 'success-message' : 'error-message';
+            errorContainer.innerHTML = `<div class="${className}">${message}</div>`;
+            
+            // 自动消失
+            if (type === 'success') {
+                setTimeout(() => {
+                    errorContainer.innerHTML = '';
+                }, 3000);
+            }
+        }
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化模块
+            initializeModule();
+            
+            // 自动创建默认输入框
+            setTimeout(createScoreInputs, 500);
+            
+            // 添加键盘快捷键
+            document.addEventListener('keydown', function(e) {
+                // Ctrl+Enter 开始统计
+                if (e.ctrlKey && e.key === 'Enter') {
+                    calculateStatistics();
+                }
+                // F5 刷新并重置
+                if (e.key === 'F5') {
+                    e.preventDefault();
+                    resetAll();
+                }
+                // 空格键开始比赛
+                if (e.key === ' ' && !isRacing) {
+                    e.preventDefault();
+                    startRace();
+                }
+                // 1键切换到条形图
+                if (e.key === '1') {
+                    switchTab('barChart');
+                }
+                // 2键切换到鸭子赛跑
+                if (e.key === '2') {
+                    switchTab('duckRace');
+                }
+            });
+            
+            console.log("页面初始化完成，等待用户操作...");
+        });
+        
+        // 添加操作说明的CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            .instructions {
+                margin-top: 40px;
+                padding: 25px;
+                background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+                border-radius: 15px;
+                border: 2px solid #4dd0e1;
+            }
+            
+            .instructions h3 {
+                color: #006064;
+                margin-bottom: 15px;
+                font-size: 1.5em;
+            }
+            
+            .instructions ol {
+                margin-left: 20px;
+                margin-bottom: 15px;
+            }
+            
+            .instructions li {
+                margin-bottom: 8px;
+                color: #37474f;
+            }
+            
+            .instructions p {
+                font-style: italic;
+                color: #546e7a;
+                margin-top: 15px;
+                padding-top: 15px;
+                border-top: 1px solid #b0bec5;
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
